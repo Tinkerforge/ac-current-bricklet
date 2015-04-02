@@ -40,7 +40,9 @@
 #define BRICKLET_DEVICE_IDENTIFIER 257
 
 #define MAX_ADC_VALUE ((1 << 12) - 1)
-#define PIN_AD (BS->pin1_ad)
+
+#define PIN_RANGE1 (BS->pin2_da)
+#define PIN_RANGE2 (BS->pin3_pwm)
 
 #define LOGGING_LEVEL LOGGING_DEBUG
 #define DEBUG_BRICKLET 0
@@ -73,6 +75,8 @@ typedef struct {
 	uint32_t moving_average_sum;
 	uint8_t moving_average_tick;
 	uint8_t moving_average_upto;
+
+	uint8_t current_range;
 
 	uint32_t tick;
 } BrickContext;

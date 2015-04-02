@@ -40,12 +40,14 @@
 #define FID_GET_DEBOUNCE_PERIOD 12
 #define FID_SET_MOVING_AVERAGE 13
 #define FID_GET_MOVING_AVERAGE 14
-#define FID_CURRENT 15
-#define FID_ANALOG_VALUE 16
-#define FID_CURRENT_REACHED 17
-#define FID_ANALOG_VALUE_REACHED 18
+#define FID_SET_CONFIGURATION 15
+#define FID_GET_CONFIGURATION 16
+#define FID_CURRENT 17
+#define FID_ANALOG_VALUE 18
+#define FID_CURRENT_REACHED 19
+#define FID_ANALOG_VALUE_REACHED 20
 
-#define FID_LAST 14
+#define FID_LAST 16
 
 typedef struct {
 	MessageHeader header;
@@ -61,11 +63,29 @@ typedef struct {
 	uint8_t length;
 } __attribute__((__packed__)) GetMovingAverageReturn;
 
-int32_t analog_value_from_mc(const int32_t value);
-int32_t current_from_analog_value(const int32_t value);
+typedef struct {
+	MessageHeader header;
+	uint8_t current_range;
+} __attribute__((__packed__)) SetConfiguration;
+
+typedef struct {
+	MessageHeader header;
+} __attribute__((__packed__)) GetConfiguration;
+
+typedef struct {
+	MessageHeader header;
+	uint8_t current_range;
+} __attribute__((__packed__)) GetConfigurationReturn;
+
 void set_moving_average(const ComType com, const SetMovingAverage *data);
 void get_moving_average(const ComType com, const GetMovingAverage *data);
+void set_configuration(const ComType com, const SetConfiguration *data);
+void get_configuration(const ComType com, const GetConfiguration *data);
+
+int32_t analog_value_from_mc(const int32_t value);
+int32_t current_from_analog_value(const int32_t value);
 void reinitialize_moving_average(void);
+void update_configuration(void);
 
 void invocation(const ComType com, const uint8_t *data);
 void constructor(void);

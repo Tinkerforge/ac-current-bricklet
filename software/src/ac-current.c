@@ -67,6 +67,16 @@ void invocation(const ComType com, const uint8_t *data) {
 			return;
 		}
 
+		case FID_SET_CONFIGURATION: {
+			set_configuration(com, (SetConfiguration*)data);
+			return;
+		}
+
+		case FID_GET_CONFIGURATION: {
+			get_configuration(com, (GetConfiguration*)data);
+			return;
+		}
+
 		default: {
 			simple_invocation(com, data);
 			break;
@@ -81,9 +91,10 @@ void invocation(const ComType com, const uint8_t *data) {
 void constructor(void) {
 	_Static_assert(sizeof(BrickContext) <= BRICKLET_CONTEXT_MAX_SIZE, "BrickContext too big");
 
-	PIN_AD.type = PIO_INPUT;
-	PIN_AD.attribute = PIO_DEFAULT;
-    BA->PIO_Configure(&PIN_AD, 1);
+	PIN_RANGE1.attribute = PIO_DEFAULT;
+	PIN_RANGE2.attribute = PIO_DEFAULT;
+	BC->current_range = 0;
+	update_configuration();
 
 	adc_channel_enable(BS->adc_channel);
 	SLEEP_MS(2);
@@ -121,9 +132,41 @@ int32_t analog_value_from_mc(const int32_t value) {
 }
 
 int32_t current_from_analog_value(const int32_t value) {
-	// TODO: calculate current
+	// TODO: Calculate current according to range
+	switch(BC->current_range) {
+		case 0: {
+			return 0;
+		}
 
-	return value;
+		case 1: {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+void update_configuration(void) {
+	// TODO: Adjust to number of available ranges
+	switch(BC->current_range) {
+		case 0: {
+			PIN_RANGE1.type = PIO_OUTPUT_1;
+			BA->PIO_Configure(&PIN_RANGE1, 1);
+
+			PIN_RANGE2.type = PIO_INPUT;
+			BA->PIO_Configure(&PIN_RANGE2, 1);
+			break;
+		}
+
+		case 1: {
+			PIN_RANGE1.type = PIO_INPUT;
+			BA->PIO_Configure(&PIN_RANGE1, 1);
+
+			PIN_RANGE2.type = PIO_OUTPUT_1;
+			BA->PIO_Configure(&PIN_RANGE2, 1);
+			break;
+		}
+	}
 }
 
 void set_moving_average(const ComType com, const SetMovingAverage *data) {
@@ -149,6 +192,26 @@ void get_moving_average(const ComType com, const GetMovingAverage *data) {
 	gmar.length        = BC->moving_average_upto;
 
 	BA->send_blocking_with_timeout(&gmar, sizeof(GetMovingAverageReturn), com);
+}
+
+void set_configuration(const ComType com, const SetConfiguration *data) {
+	// TODO: Set currect number of current ranges
+	if(data->current_range > 2) {
+		BA->com_return_error(data, sizeof(MessageHeader), MESSAGE_ERROR_CODE_INVALID_PARAMETER, com);
+		return;
+	}
+
+	BC->current_range = data->current_range;
+	update_configuration();
+}
+
+void get_configuration(const ComType com, const GetConfiguration *data) {
+	GetConfigurationReturn gcr;
+	gcr.header        = data->header;
+	gcr.header.length = sizeof(GetConfigurationReturn);
+	gcr.current_range = BC->current_range;
+
+	BA->send_blocking_with_timeout(&gcr, sizeof(GetConfigurationReturn), com);
 }
 
 void tick(const uint8_t tick_type) {
